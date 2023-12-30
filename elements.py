@@ -1,23 +1,36 @@
 from enum import Enum
 
 
-class Terminal(Enum):
-    """
-    A terminal, or a classification for a lexeme.
-    """
-    ASSIGN = "T_ASSIGN"
+class Operator(Enum):
     MULT = "T_MULT"
     PLUS = "T_PLUS"
     MINUS = "T_MINUS"
     DIV = "T_DIV"
-    AND = "T_AND"
-    OR = "T_OR"
-    NOT = "T_NOT"
     LT = "T_LT"
     GT = "T_GT"
     LE = "T_LE"
     GE = "T_GE"
     EQ = "T_EQ"
+    AND = "T_AND"
+    OR = "T_OR"
+    NOT = "T_NOT"
+    COMMA = "T_COMMA"
+    DOT = "T_DOT"
+    DOTDOT = "T_DOTDOT"
+
+
+class Parens(Enum):
+    LPAREN = "T_LPAREN"
+    RPAREN = "T_RPAREN"
+    LBRACK = "T_LBRACK"
+    RBRACK = "T_RBRACK"
+
+
+class Terminal(Enum, Operator, Parens):
+    """
+    A terminal, or a classification for a lexeme.
+    """
+    ASSIGN = "T_ASSIGN"
     NE = "T_NE"
     VAR = "T_VAR"
     ARRAY = "T_ARRAY"
@@ -38,15 +51,8 @@ class Terminal(Enum):
     WRITE = "T_WRITE"
     TRUE = "T_TRUE"
     FALSE = "T_FALSE"
-    LBRACK = "T_LBRACK"
-    RBRACK = "T_RBRACK"
     SCOLON = "T_SCOLON"
     COLON = "T_COLON"
-    LPAREN = "T_LPAREN"
-    RPAREN = "T_RPAREN"
-    COMMA = "T_COMMA"
-    DOT = "T_DOT"
-    DOTDOT = "T_DOTDOT"
     IDENT = "T_IDENT"
     INTCONST = "T_INTCONST"
     CHARCONST = "T_CHARCONST"
