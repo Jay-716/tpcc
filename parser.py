@@ -1,8 +1,7 @@
-from enum import Enum
 from typing import Iterator, List, Optional
 from elements import Terminal as VT, Nonterminal as VN, Operator, Parens
-from lexer import Token
-from types.parser import *
+from lexer import Token, Terminal
+from tpcc_types.parser import *
 
 
 class ParserException(Exception):
@@ -12,7 +11,7 @@ class ParserException(Exception):
         self.token = token
 
     def __str__(self):
-        return self.message + 'when processing Token: ' + str(self.token)
+        return self.message + '\nCurrent token: ' + str(self.token)
 
 
 class Parser:
@@ -36,8 +35,8 @@ class Parser:
         self.current_token = self.next_token
         self.next_token = next(self.tokens_iter)
 
-    def is_operator(self, value: Token) -> bool:
-        return value.terminal in Operator
+    def is_operator(self, value: Terminal) -> bool:
+        return value in Operator
 
     def parse_binary_expression(self):
         left = self.parse_expression()
@@ -84,4 +83,116 @@ class Parser:
         self.eat_token()
         self.eat_token(VT.ASSIGN)
         node = VariableAssignmentNode(IdentifierNode(name), self.parse_expression())
+        self.eat_token(VT.SCOLON)
         return node
+
+    def parse_variable_declaration(self):
+        self.eat_token(VT.VAR)
+        # TODO: validate variable name
+        names: List[IdentifierNode] = list()
+        names.append(IdentifierNode(self.current_token.lexeme))
+        self.eat_token(VT.IDENT)
+        while self.current_token.terminal == VT.COMMA:
+            self.eat_token(VT.COMMA)
+            names.append(IdentifierNode(self.next_token.lexeme))
+            self.eat_token(VT.IDENT)
+        self.eat_token(VT.COLON)
+        variable_type_str = self.current_token.lexeme
+        if variable_type_str == 'integer':
+            variable_type = VariableType.Integer
+            self.eat_token(VT.INT)
+        else:
+            raise ParserException(f'Unrecognized variable_type: {variable_type_str}', self.current_token)
+        node = VariableDeclarationNode(names, variable_type)
+        self.eat_token(VT.SCOLON)
+        return node
+
+    def parse_statement(self):
+        if self.current_token.terminal == VT.WRITE:
+            result = self.parse_output()
+        elif self.current_token.terminal == VT.READ:
+            result = self.parse_input()
+        elif self.current_token.terminal == VT.VAR:
+            result = self.parse_variable_declaration()
+        elif self.current_token.terminal == VT.IF:
+            result = self.parse_if_statement()
+        elif self.current_token.terminal == VT.WHILE:
+            result = self.parse_while_statement()
+        elif self.current_token.terminal == VT.REPEAT:
+            result = self.parse_repeat_statement()
+        elif self.current_token.terminal == VT.IDENT:
+            result = self.parse_variable_assignment()
+        else:
+            raise ParserException(f'Unexpected token: {self.current_token}', self.current_token)
+        return result
+
+    def parse_if_statement(self):
+        self.eat_token(VT.IF)
+        condition = self.parse_binary_expression()
+        self.eat_token(VT.THEN)
+        statements = list()
+        if self.current_token.terminal == VT.BEGIN:
+            self.eat_token(VT.BEGIN)
+            while self.current_token.terminal != VT.END:
+                statements.append(self.parse_statement())
+            self.eat_token(VT.END)
+        else:
+            statements.append(self.parse_statement())
+        node = IfStatementNode(condition, statements)
+        return node
+
+
+    def parse_while_statement(self):
+        self.eat_token(VT.WHILE)
+        condition = self.parse_binary_expression()
+        self.eat_token(VT.DO)
+        statements = list()
+        if self.current_token.terminal == VT.BEGIN:
+            self.eat_token(VT.BEGIN)
+            while self.current_token.terminal != VT.END:
+                statements.append(self.parse_statement())
+            self.eat_token(VT.END)
+        else:
+            statements.append(self.parse_statement())
+        node = WhileStatementNode(condition, statements)
+        return node
+
+
+    def parse_repeat_statement(self):
+        self.eat_token(VT.REPEAT)
+        condition = self.parse_binary_expression()
+        self.eat_token(VT.UNTIL)
+        statements = list()
+        if self.current_token.terminal == VT.BEGIN:
+            self.eat_token(VT.BEGIN)
+            while self.current_token.terminal != VT.END:
+                statements.append(self.parse_statement())
+            self.eat_token(VT.END)
+        else:
+            statements.append(self.parse_statement())
+        node = RepeatStatementNode(condition, statements)
+        return node
+
+    def parse_program(self):
+        self.eat_token(VT.PROG)
+        program = self.current_token.lexeme
+        node = ProgramNode(program)
+        self.eat_token(VT.IDENT)
+        self.eat_token(VT.SCOLON)
+        return node
+
+    def _parse(self):
+        self.nodes.append(self.parse_program())
+        self.parse_variable_declaration()
+        self.eat_token(VT.PROC)
+        self.eat_token(VT.IDENT)
+        self.eat_token(VT.SCOLON)
+        self.eat_token(VT.BEGIN)
+        while self.next_token and self.current_token.terminal != VT.END:
+            self.nodes.append(self.parse_statement())
+        self.eat_token(VT.END)
+
+    def parse(self):
+        self._parse()
+        return self.nodes
+
