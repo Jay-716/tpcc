@@ -1,32 +1,14 @@
 from enum import Enum
 
 
-class Operator(Enum):
-    MULT = "T_MULT"
-    PLUS = "T_PLUS"
-    MINUS = "T_MINUS"
-    DIV = "T_DIV"
-    LT = "T_LT"
-    GT = "T_GT"
-    LE = "T_LE"
-    GE = "T_GE"
-    EQ = "T_EQ"
-    AND = "T_AND"
-    OR = "T_OR"
-    NOT = "T_NOT"
-    COMMA = "T_COMMA"
-    DOT = "T_DOT"
-    DOTDOT = "T_DOTDOT"
+Operator = ["T_MULT", "T_PLUS", "T_MINUS", "T_DIV", "T_LT", "T_GT", "T_LE", "T_GE", "T_EQ", "T_AND", "T_OR", "T_NOT",
+            "T_COMMA", "T_DOT", "T_DOTDOT"]
 
 
-class Parens(Enum):
-    LPAREN = "T_LPAREN"
-    RPAREN = "T_RPAREN"
-    LBRACK = "T_LBRACK"
-    RBRACK = "T_RBRACK"
+Parens = ["T_LPAREN", "T_RPAREN", "T_LBRACK", "T_RBRACK"]
 
 
-class Terminal(Enum, Operator, Parens):
+class Terminal(Enum):
     """
     A terminal, or a classification for a lexeme.
     """
@@ -43,6 +25,8 @@ class Terminal(Enum, Operator, Parens):
     BEGIN = "T_BEGIN"
     END = "T_END"
     WHILE = "T_WHILE"
+    REPEAT = "T_REPEAT"
+    UNTIL = "T_UNTIL"
     DO = "T_DO"
     IF = "T_IF"
     THEN = "T_THEN"
@@ -57,6 +41,27 @@ class Terminal(Enum, Operator, Parens):
     INTCONST = "T_INTCONST"
     CHARCONST = "T_CHARCONST"
     UNKNOWN = "UNKNOWN"
+    # Operators
+    MULT = "T_MULT"
+    PLUS = "T_PLUS"
+    MINUS = "T_MINUS"
+    DIV = "T_DIV"
+    LT = "T_LT"
+    GT = "T_GT"
+    LE = "T_LE"
+    GE = "T_GE"
+    EQ = "T_EQ"
+    AND = "T_AND"
+    OR = "T_OR"
+    NOT = "T_NOT"
+    COMMA = "T_COMMA"
+    DOT = "T_DOT"
+    DOTDOT = "T_DOTDOT"
+    # Parens
+    LPAREN = "T_LPAREN"
+    RPAREN = "T_RPAREN"
+    LBRACK = "T_LBRACK"
+    RBRACK = "T_RBRACK"
 
 
 class Nonterminal(Enum):

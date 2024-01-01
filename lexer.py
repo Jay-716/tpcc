@@ -58,6 +58,8 @@ KEYWORDS = {
     "begin": Terminal.BEGIN,
     "end": Terminal.END,
     "while": Terminal.WHILE,
+    "repeat": Terminal.REPEAT,
+    "until": Terminal.UNTIL,
     "do": Terminal.DO,
     "if": Terminal.IF,
     "then": Terminal.THEN,
