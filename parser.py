@@ -1,3 +1,4 @@
+from _ast import Expression
 from typing import Iterator, List, Optional
 from elements import Terminal as VT, Nonterminal as VN, Operator, Parens
 from lexer import Token, Terminal
@@ -38,6 +39,7 @@ class Parser:
     def is_operator(self, value: Terminal) -> bool:
         return value in Operator
 
+    # TODO: operator priority
     def parse_binary_expression(self):
         left = self.parse_expression()
         operator = self.current_token.terminal
@@ -49,23 +51,42 @@ class Parser:
         node = BinaryExpressionNode(left, right, operator)
         return node
 
-    def parse_expression(self):
-        if self.current_token.terminal is VT.INTCONST:
-            node = NumberLiteralNode(int(self.current_token.lexeme))
-            self.eat_token()
-            return node
-        elif self.current_token.terminal is VT.IDENT:
-            node = IdentifierNode(self.current_token.lexeme)
-            self.eat_token()
-            return node
-        elif self.current_token.terminal in Parens:
-            self.eat_token()
-            node = self.parse_binary_expression()
-            self.eat_token()
-            return node
+    def parse_primary(self):
+        token = self.current_token
+        if token.terminal is VT.IDENT:
+            return IdentifierNode(token.lexeme)
+        elif token.terminal is VT.INTCONST:
+            return NumberLiteralNode(int(token.lexeme))
         else:
-            raise ParserException(f'Unexpected token type {self.current_token.terminal}',
-                                  self.current_token)
+            raise ParserException(f'Unexpected token type in expression', self.current_token)
+
+    def _parse_expression(self, lhs: ExpressionBaseNode, min_precedence: int):
+        def precedence_of(op: Operator):
+            precedences = {Terminal.PLUS: 1, Terminal.MINUS: 1, Terminal.MULT: 2, Terminal.DIV: 2,
+                           Terminal.EQ: 3, Terminal.NE: 3, Terminal.LT: 3, Terminal.GT: 3, Terminal.LE: 3, Terminal.GE: 3}
+            return precedences[op]
+
+        peek = self.next_token
+        while peek.terminal in Operator and precedence_of(peek.terminal) >= 1:
+            operator = peek.terminal
+            self.eat_token()
+            self.eat_token()
+            rhs = self.parse_primary()
+            peek = self.next_token
+            while peek.terminal in Operator and precedence_of(peek.terminal) >= precedence_of(operator):
+                rhs = self._parse_expression(rhs,
+                                             precedence_of(operator) +
+                                             1 if precedence_of(self.next_token.terminal)
+                                                  >= precedence_of(operator)
+                                             else 0)
+                peek = self.next_token
+            lhs = BinaryExpressionNode(lhs, rhs, operator)
+        #if self.next_token.terminal is VT.SCOLON:
+        #    self.eat_token()
+        return lhs
+
+    def parse_expression(self):
+        return self._parse_expression(self.parse_primary(), 0)
 
     def parse_output(self):
         self.eat_token(VT.WRITE)
@@ -83,6 +104,7 @@ class Parser:
         self.eat_token()
         self.eat_token(VT.ASSIGN)
         node = VariableAssignmentNode(IdentifierNode(name), self.parse_expression())
+        self.eat_token()  # parse_expression() may not eat the last token of an expression
         self.eat_token(VT.SCOLON)
         return node
 
@@ -128,7 +150,8 @@ class Parser:
 
     def parse_if_statement(self):
         self.eat_token(VT.IF)
-        condition = self.parse_binary_expression()
+        condition = self.parse_expression()
+        self.eat_token()  # parse_expression() may not eat the last token of an expression
         self.eat_token(VT.THEN)
         statements = list()
         if self.current_token.terminal == VT.BEGIN:
@@ -136,15 +159,16 @@ class Parser:
             while self.current_token.terminal != VT.END:
                 statements.append(self.parse_statement())
             self.eat_token(VT.END)
+            self.eat_token(VT.DOT)
         else:
             statements.append(self.parse_statement())
         node = IfStatementNode(condition, statements)
         return node
 
-
     def parse_while_statement(self):
         self.eat_token(VT.WHILE)
-        condition = self.parse_binary_expression()
+        condition = self.parse_expression()  # TODO: use parse_expression()
+        self.eat_token()  # parse_expression() may not eat the last token of an expression
         self.eat_token(VT.DO)
         statements = list()
         if self.current_token.terminal == VT.BEGIN:
@@ -152,24 +176,27 @@ class Parser:
             while self.current_token.terminal != VT.END:
                 statements.append(self.parse_statement())
             self.eat_token(VT.END)
+            self.eat_token(VT.DOT)
         else:
             statements.append(self.parse_statement())
         node = WhileStatementNode(condition, statements)
         return node
 
-
     def parse_repeat_statement(self):
         self.eat_token(VT.REPEAT)
-        condition = self.parse_binary_expression()
-        self.eat_token(VT.UNTIL)
         statements = list()
         if self.current_token.terminal == VT.BEGIN:
             self.eat_token(VT.BEGIN)
             while self.current_token.terminal != VT.END:
                 statements.append(self.parse_statement())
             self.eat_token(VT.END)
+            self.eat_token(VT.DOT)
         else:
             statements.append(self.parse_statement())
+        self.eat_token(VT.UNTIL)
+        condition = self.parse_expression()
+        self.eat_token()  # parse_expression() may not eat the last token of an expression
+        self.eat_token(VT.SCOLON)
         node = RepeatStatementNode(condition, statements)
         return node
 
@@ -190,9 +217,10 @@ class Parser:
         self.eat_token(VT.BEGIN)
         while self.next_token and self.current_token.terminal != VT.END:
             self.nodes.append(self.parse_statement())
-        self.eat_token(VT.END)
+        # End of the whole program. Stop here, otherwise eat_token() will raise StopIteration.
+        # self.eat_token(VT.END)
+        # self.eat_token(VT.SCOLON)
 
     def parse(self):
         self._parse()
         return self.nodes
-

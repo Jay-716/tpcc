@@ -1,13 +1,6 @@
 from enum import Enum
 
 
-Operator = ["T_MULT", "T_PLUS", "T_MINUS", "T_DIV", "T_LT", "T_GT", "T_LE", "T_GE", "T_EQ", "T_AND", "T_OR", "T_NOT",
-            "T_COMMA", "T_DOT", "T_DOTDOT"]
-
-
-Parens = ["T_LPAREN", "T_RPAREN", "T_LBRACK", "T_RBRACK"]
-
-
 class Terminal(Enum):
     """
     A terminal, or a classification for a lexeme.
@@ -62,6 +55,15 @@ class Terminal(Enum):
     RPAREN = "T_RPAREN"
     LBRACK = "T_LBRACK"
     RBRACK = "T_RBRACK"
+
+
+Operator = [Terminal.MULT, Terminal.PLUS, Terminal.MINUS, Terminal.DIV, Terminal.LT, Terminal.GT, Terminal.LE,
+            Terminal.GE, Terminal.GE, Terminal.AND, Terminal.OR, Terminal.NOT, Terminal.COMMA, Terminal.DOT,
+            Terminal.DOTDOT, Terminal.EQ, Terminal.NE]
+
+
+Parens = [Terminal.LPAREN, Terminal.RPAREN, Terminal.LBRACK, Terminal.RBRACK]
+
 
 
 class Nonterminal(Enum):
