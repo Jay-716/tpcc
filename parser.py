@@ -153,16 +153,27 @@ class Parser:
         condition = self.parse_expression()
         self.eat_token()  # parse_expression() may not eat the last token of an expression
         self.eat_token(VT.THEN)
-        statements = list()
+        true_statements = list()
         if self.current_token.terminal == VT.BEGIN:
             self.eat_token(VT.BEGIN)
             while self.current_token.terminal != VT.END:
-                statements.append(self.parse_statement())
+                true_statements.append(self.parse_statement())
             self.eat_token(VT.END)
             self.eat_token(VT.DOT)
         else:
-            statements.append(self.parse_statement())
-        node = IfStatementNode(condition, statements)
+            true_statements.append(self.parse_statement())
+        false_statements = list()
+        if self.current_token.terminal == VT.ELSE:
+            self.eat_token(VT.ELSE)
+            if self.current_token.terminal == VT.BEGIN:
+                self.eat_token(VT.BEGIN)
+                while self.current_token.terminal != VT.END:
+                    false_statements.append(self.parse_statement())
+                self.eat_token(VT.END)
+                self.eat_token(VT.DOT)
+            else:
+                false_statements.append(self.parse_statement())
+        node = IfStatementNode(condition, true_statements, false_statements)
         return node
 
     def parse_while_statement(self):

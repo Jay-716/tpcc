@@ -76,12 +76,15 @@ class VariableDeclarationNode(ExpressionBaseNode):
 
 
 class IfStatementNode(StatementNode):
-    def __init__(self, condition: ExpressionBaseNode, statements: List[StatementNode]):
+    def __init__(self, condition: ExpressionBaseNode,
+                 true_statements: List[StatementNode], false_statements: List[StatementNode] = []):
         self.condition = condition
-        self.statements = statements
+        self.true_statements = true_statements
+        self.false_statements = false_statements
 
     condition: ExpressionBaseNode
-    statements: List[StatementNode]
+    true_statements: List[StatementNode]
+    false_statements: List[StatementNode]
 
 
 class WhileStatementNode(StatementNode):
