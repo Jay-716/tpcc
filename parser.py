@@ -62,8 +62,9 @@ class Parser:
 
     def _parse_expression(self, lhs: ExpressionBaseNode, min_precedence: int):
         def precedence_of(op: Operator):
-            precedences = {Terminal.PLUS: 1, Terminal.MINUS: 1, Terminal.MULT: 2, Terminal.DIV: 2,
-                           Terminal.EQ: 3, Terminal.NE: 3, Terminal.LT: 3, Terminal.GT: 3, Terminal.LE: 3, Terminal.GE: 3}
+            precedences = {Terminal.PLUS: 3, Terminal.MINUS: 3, Terminal.MULT: 4, Terminal.DIV: 4,
+                           Terminal.EQ: 5, Terminal.NE: 5, Terminal.LT: 5, Terminal.GT: 5, Terminal.LE: 5, Terminal.GE: 5,
+                           Terminal.OR: 1, Terminal.AND: 2}
             return precedences[op]
 
         peek = self.next_token
