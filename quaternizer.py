@@ -47,6 +47,7 @@ class Quaternizer:
 
     def generate(self):
         self._generate()
+        return self.quaternions
 
     def _generate(self):
         node = self.next_node()
