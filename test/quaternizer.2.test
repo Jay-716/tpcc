@@ -1,0 +1,18 @@
+program pg;
+
+var a, b, c, d, w: integer;
+
+procedure pg;
+begin
+    a := 5;
+    b := 4;
+    c := 3;
+    d := 2;
+    w := 1;
+    if w >= 1 then
+        a := b * c + b / d;
+    else
+        repeat
+            a := a + 1;
+        until a < 0;
+end;

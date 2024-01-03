@@ -1,0 +1,17 @@
+(* This program is for lexer testing. It would fail in parsing because the grammar is a little bit different.(end.) *)
+program pg;
+
+var a, b, c: integer;
+
+procedure pc;
+begin
+    a := 10;
+    b := 20;
+    c := 30;
+    while a < b do
+    begin
+        a := a - 1;
+        b := b / 2;
+        c := -1;
+    end;
+end;

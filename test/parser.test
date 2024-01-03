@@ -1,0 +1,31 @@
+program pg;
+
+var a, b, c: integer;
+
+procedure pc;
+begin
+    a := 10;
+    b := a;
+    c := a / b + a * b;
+
+    while a < b do
+    begin
+        a := a - 1;
+        b := b / 2;
+        c := -1;
+    end.
+
+
+    a := 10;
+    b := a;
+    c := a / b + a * b;
+    while a < b do
+    begin
+        if a = 1 and b = 1 then
+            c := c + 1;
+        else
+            repeat
+                a := a + 1;
+            until a > 10;
+    end.
+end;
