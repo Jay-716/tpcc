@@ -48,7 +48,7 @@ class ConditionalJumpQuaternion(Quaternion):
         self.dest = dest
 
     def __str__(self):
-        return f'(j{self.operator}, {self.lhs}, {self.rhs}, {self.dest})'
+        return f'(j{self.operator}, {self.lhs}, {self.rhs}, ({self.dest}))'
 
 
 class UnconditionalJumpQuaternion(Quaternion):
@@ -58,4 +58,4 @@ class UnconditionalJumpQuaternion(Quaternion):
         self.dest = dest
 
     def __str__(self):
-        return f'(j , -, -, {self.dest})'
+        return f'(j , -, -, ({self.dest}))'

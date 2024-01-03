@@ -88,7 +88,7 @@ class Token:
         self.line_number = line_number
 
     def __str__(self):
-        return f"TOKEN: {self.terminal.value} LEXEME: {self.lexeme}"
+        return f"TOKEN: {self.terminal.value} LEXEME: {self.lexeme} LINE: {self.line_number}"
 
 
 class MiplInvalidConst(Exception):
