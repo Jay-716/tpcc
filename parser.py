@@ -68,7 +68,7 @@ class Parser:
             return precedences[op]
 
         peek = self.next_token
-        while peek.terminal in Operator and precedence_of(peek.terminal) >= 1:
+        while peek.terminal in Operator and precedence_of(peek.terminal) >= min_precedence:
             operator = peek.terminal
             self.eat_token()
             self.eat_token()

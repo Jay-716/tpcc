@@ -192,7 +192,8 @@ class Quaternizer:
         elif type(condition.left) is IdentifierNode:
             lhs = condition.left.value
         elif type(condition.left) is BinaryExpressionNode:
-            lhs = self.trans_condition(condition.left)
+            # TODO: We may need to backpatch and merge here too, but it seems that the control flow will not reach here.
+            return self.trans_condition(condition.left)
         else:
             raise QuaternizerException(f'Unexpected condition operand: {condition.left}', self.current_node)
         if type(condition.right) is NumberLiteralNode:
@@ -200,7 +201,8 @@ class Quaternizer:
         elif type(condition.right) is IdentifierNode:
             rhs = condition.right.value
         elif type(condition.right) is BinaryExpressionNode:
-            rhs = self.trans_condition(condition.right)
+            # TODO: We may need to backpatch and merge here too, but it seems that the control flow will not reach here.
+            return self.trans_condition(condition.right)
         else:
             raise QuaternizerException(f'Unexpected condition operand: {condition.right}', self.current_node)
         #true_exit = self.get_temporary_label()
