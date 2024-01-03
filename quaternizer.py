@@ -17,7 +17,7 @@ class QuaternizerException(Exception):
 class Quaternizer:
     nodes: Iterator[StatementNode]
     quaternions: List[Quaternion] = list()
-    current_pos: int = 0
+    current_pos: int = 0  # The position of next quaternion to be generated, started from 1.
     current_node: StatementNode
     temporary_variables: int = 0
     temporary_labels: int = 0
@@ -35,7 +35,7 @@ class Quaternizer:
     def emit(self, quaternion: Quaternion) -> int:
         self.quaternions.append(quaternion)
         self.current_pos = len(self.quaternions)
-        return len(self.quaternions)
+        return self.current_pos
 
     def get_temporary_variable(self) -> str:
         self.temporary_variables += 1
@@ -61,11 +61,11 @@ class Quaternizer:
         elif type(node) is VariableAssignmentNode:
             self.parse_variable_assignment(node)
         elif type(node) is IfStatementNode:
-            pass
+            self.parse_if_statement(node)
         elif type(node) is WhileStatementNode:
-            pass
+            self.parse_while_statement(node)
         elif type(node) is RepeatStatementNode:
-            pass
+            self.parse_repeat_statement(node)
         else:
             raise QuaternizerException(f'Unexpected node type: {type(node)}', self.current_node)
 
@@ -102,13 +102,13 @@ class Quaternizer:
         else:
             raise QuaternizerException(f'Unexpected expression operand: {type(node.right)}', self.current_node)
         tmp = self.get_temporary_variable()
-        if node.operator.value is VT.PLUS:
+        if node.operator is VT.PLUS:
             op = '+'
-        elif node.operator.value is VT.MINUS:
+        elif node.operator is VT.MINUS:
             op = '-'
-        elif node.operator.value is VT.MULT:
+        elif node.operator is VT.MULT:
             op = '*'
-        elif node.operator.value is VT.DIV:
+        elif node.operator is VT.DIV:
             op = '/'
         else:
             raise QuaternizerException(f'Unexpected expression operator: {type(node.operator.value)}', self.current_node)
@@ -123,15 +123,37 @@ class Quaternizer:
         true_begin = self.current_pos + 1
         for statement in node.true_statements:
             self.parse_node(statement)
-        false_end_label = self.get_temporary_variable()
+        false_end_label = self.get_temporary_label()
         self.emit(UnconditionalJumpQuaternion(false_end_label))  # jump across false statements
         false_begin = self.current_pos + 1
         for statement in node.false_statements:
             self.parse_node(statement)
-        false_end = self.current_pos + 1
-        self.fill_label(true_exit, true_begin)
-        self.fill_label(false_exit, false_begin)
+        false_end = self.current_pos
+        self.backpatch(true_exit, true_begin)
         self.fill_label(false_end_label, false_end)
+        self.backpatch(false_exit, false_begin)
+
+    def parse_while_statement(self, node: WhileStatementNode):
+        condition_begin, true_exit, false_exit = self.trans_condition(node.condition)
+        while_begin = self.current_pos + 1
+        for statement in node.statements:
+            self.parse_node(statement)
+        self.emit(UnconditionalJumpQuaternion(condition_begin))
+        while_end = self.current_pos + 1
+        self.backpatch(true_exit, while_begin)
+        self.backpatch(false_exit, while_end)
+
+    def parse_repeat_statement(self, node: RepeatStatementNode):
+        repeat_begin = self.current_pos + 1
+        for statement in node.statements:
+            self.parse_node(statement)
+        condition_begin, true_exit, false_exit = self.trans_condition(node.condition)
+        # trans_condition() will generate an unconditional jump for false exit,
+        # which is simply the next quaternion of repeat condition jump, so the false exit jump here is extra,
+        # we need to increase repeat_end to avoid false exit jump onto itself.
+        repeat_end = self.current_pos + 1
+        self.backpatch(true_exit, repeat_begin)
+        self.backpatch(false_exit, repeat_end)
 
     def trans_condition(self, condition: BinaryExpressionNode):
         if condition.operator == VT.OR:
@@ -186,7 +208,7 @@ class Quaternizer:
         false_exit = 0
         start_pos = self.emit(ConditionalJumpQuaternion(op, lhs, rhs, true_exit))
         false_pos = self.emit(UnconditionalJumpQuaternion(false_exit))
-        return start_pos, true_exit, false_exit
+        return start_pos, start_pos, false_pos
 
     def fill_label(self, label: str, pos: int):
         for quaternion in self.quaternions:
@@ -198,20 +220,25 @@ class Quaternizer:
                     quaternion.dest = pos
 
     def backpatch(self, head: int, dest: int):
-        while self.quaternions[head].dest != 0:
+        head -= 1  # to index
+        while head != 0:
             old_head = self.quaternions[head].dest
             self.quaternions[head].dest = dest
             head = old_head
 
     def merge(self, lhs: int, rhs: int):
-        if self.quaternions[rhs].dest == 0:
-            return lhs
+        lhs -= 1  # to index
+        rhs -= 1  # to index
+        if rhs == 0:
+            return lhs + 1
         else:
             head = rhs
             while head != 0:
+                old_head = head
                 head = self.quaternions[head].dest
-            self.quaternions[head].dest = lhs
-            return rhs
+            # head == 0
+            self.quaternions[old_head].dest = lhs
+            return rhs + 1
 
 
 
