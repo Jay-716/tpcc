@@ -1,4 +1,3 @@
-from _ast import Expression
 from typing import Iterator, List, Optional
 from elements import Terminal as VT, Nonterminal as VN, Operator, Parens
 from lexer import Token, Terminal

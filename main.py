@@ -9,7 +9,7 @@ arg_parser = ArgumentParser(description='tpcc - Tiny PasCal Compiler')
 arg_parser.add_argument('-o', '--output', required=False, help='Output file')
 arg_parser.add_argument('-l', '--lexer', action='store_true', required=False, help='Run lexer only')
 arg_parser.add_argument('-p', '--parser', action='store_true', required=False, help='Run lexer and parser only(override -l --lexer)')
-arg_parser.add_argument('-q', '--quaternizer', action='store_false', required=False, help='Run lexer, parser, and quaternizer(default)')
+arg_parser.add_argument('-q', '--quaternizer', action='store_true', required=False, help='Run lexer, parser, and quaternizer(default)')
 arg_parser.add_argument('input_files', nargs='+', help='Input file(s)')
 args = arg_parser.parse_args()
 

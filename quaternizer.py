@@ -16,14 +16,18 @@ class QuaternizerException(Exception):
 
 class Quaternizer:
     nodes: Iterator[StatementNode]
-    quaternions: List[Quaternion] = list()
-    current_pos: int = 0  # The position of next quaternion to be generated, started from 1.
+    quaternions: List[Quaternion]
+    current_pos: int  # The position of next quaternion to be generated, started from 1.
     current_node: StatementNode
-    temporary_variables: int = 0
-    temporary_labels: int = 0
+    temporary_variables: int
+    temporary_labels: int
 
     def __init__(self, nodes: List[StatementNode]):
         self.nodes = iter(nodes)
+        self.quaternions = list()
+        self.current_pos = 0
+        self.temporary_variables = 0
+        self.temporary_labels = 0
 
     def next_node(self) -> Optional[StatementNode]:
         try:
@@ -112,7 +116,7 @@ class Quaternizer:
         elif node.operator is VT.DIV:
             op = '/'
         else:
-            raise QuaternizerException(f'Unexpected expression operator: {type(node.operator.value)}', self.current_node)
+            raise QuaternizerException(f'Unexpected expression operator: {node.operator.value}', self.current_node)
         self.emit(CalculationQuaternion(lhs, rhs, op, tmp))
         return tmp
 
