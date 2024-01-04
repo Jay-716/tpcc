@@ -133,7 +133,7 @@ class Quaternizer:
         false_begin = self.current_pos + 1
         for statement in node.false_statements:
             self.parse_node(statement)
-        false_end = self.current_pos
+        false_end = self.current_pos + 1
         self.backpatch(true_exit, true_begin)
         self.fill_label(false_end_label, false_end)
         self.backpatch(false_exit, false_begin)
