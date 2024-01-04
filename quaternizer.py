@@ -157,8 +157,8 @@ class Quaternizer:
         # which is simply the next quaternion of repeat condition jump, so the false exit jump here is extra,
         # we need to increase repeat_end to avoid false exit jump onto itself.
         repeat_end = self.current_pos + 1
-        self.backpatch(true_exit, repeat_begin)
-        self.backpatch(false_exit, repeat_end)
+        self.backpatch(true_exit, repeat_end)
+        self.backpatch(false_exit, repeat_begin)
 
     def trans_condition(self, condition: BinaryExpressionNode):
         if condition.operator == VT.OR:
