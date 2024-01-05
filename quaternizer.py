@@ -129,40 +129,39 @@ class Quaternizer:
         condition_begin, true_exit, false_exit = self.trans_condition(node.condition)
         true_begin = self.current_pos + 1
         self.backpatch(true_exit, true_begin)
+        # false exit should jump to the beginning of true statements
         c_chain = false_exit
         true_chain = 1
         for statement in node.true_statements:
             chain = self.parse_node(statement)
             true_chain = chain if chain is not None else 1
+        # merge false exit and true statements exit, since they should jump to the same destination.
         s_chain = self.merge(c_chain, true_chain)
         jump_out = self.emit(UnconditionalJumpQuaternion(0))  # jump across false statements
+        # false exit jumps to false statements
         self.backpatch(c_chain, jump_out + 1)
+        # true statements exit and jump out exit should jump to the same destination
         tp_chain = self.merge(jump_out, true_chain)
-        false_begin = self.current_pos + 1
         false_chain = 1
         for statement in node.false_statements:
             chain = self.parse_node(statement)
             false_chain = chain if chain is not None else 1
-        false_end = self.current_pos + 1
+        # true statements, jump out and false statements should jump to the same destination
         s_chain = self.merge(tp_chain, false_chain)
-        #self.merge(false_end - 1, true_chain)
-        #self.merge(false_end - 1, false_chain)
-        #self.backpatch(false_exit, false_begin)
         return s_chain
 
     def parse_while_statement(self, node: WhileStatementNode):
         condition_begin, true_exit, false_exit = self.trans_condition(node.condition)
         while_begin = self.current_pos + 1
+        # true exit jumps to the beginning of while statements
         self.backpatch(true_exit, while_begin)
         while_chain = 1
         for statement in node.statements:
             chain = self.parse_node(statement)
             while_chain = chain if chain is not None else 1
-        while_end = self.current_pos
-        #self.backpatch(false_exit, while_end)
+        # jump to the beginning of the whole statement
         self.backpatch(while_chain, condition_begin)
         self.emit(UnconditionalJumpQuaternion(condition_begin))
-        #self.merge(while_end - 1, while_chain)
         chain = false_exit
         return chain
 
