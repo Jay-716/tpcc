@@ -56,19 +56,21 @@ class Quaternizer:
     def _generate(self):
         node = self.next_node()
         while node is not None:
-            self.parse_node(node)
+            last_chain = self.parse_node(node)
             node = self.next_node()
+            if last_chain is not None:
+                self.backpatch(last_chain, self.current_pos + 1)
 
-    def parse_node(self, node: StatementNode) -> Quaternion:
+    def parse_node(self, node: StatementNode):
         if type(node) is ProgramNode:
             # Do nothing since we only support single file with single program currently.
             pass
         elif type(node) is VariableAssignmentNode:
             self.parse_variable_assignment(node)
         elif type(node) is IfStatementNode:
-            self.parse_if_statement(node)
+            return self.parse_if_statement(node)
         elif type(node) is WhileStatementNode:
-            self.parse_while_statement(node)
+            return self.parse_while_statement(node)
         elif type(node) is RepeatStatementNode:
             self.parse_repeat_statement(node)
         else:
@@ -121,32 +123,48 @@ class Quaternizer:
         return tmp
 
     def parse_if_statement(self, node: IfStatementNode):
-        self._parse_if_statement(node)
+        return self._parse_if_statement(node)
 
     def _parse_if_statement(self, node: IfStatementNode):
         condition_begin, true_exit, false_exit = self.trans_condition(node.condition)
         true_begin = self.current_pos + 1
-        for statement in node.true_statements:
-            self.parse_node(statement)
-        false_end_label = self.get_temporary_label()
-        self.emit(UnconditionalJumpQuaternion(false_end_label))  # jump across false statements
-        false_begin = self.current_pos + 1
-        for statement in node.false_statements:
-            self.parse_node(statement)
-        false_end = self.current_pos + 1
         self.backpatch(true_exit, true_begin)
-        self.fill_label(false_end_label, false_end)
-        self.backpatch(false_exit, false_begin)
+        c_chain = false_exit
+        true_chain = 1
+        for statement in node.true_statements:
+            chain = self.parse_node(statement)
+            true_chain = chain if chain is not None else 1
+        s_chain = self.merge(c_chain, true_chain)
+        jump_out = self.emit(UnconditionalJumpQuaternion(0))  # jump across false statements
+        self.backpatch(c_chain, jump_out + 1)
+        tp_chain = self.merge(jump_out, true_chain)
+        false_begin = self.current_pos + 1
+        false_chain = 1
+        for statement in node.false_statements:
+            chain = self.parse_node(statement)
+            false_chain = chain if chain is not None else 1
+        false_end = self.current_pos + 1
+        s_chain = self.merge(tp_chain, false_chain)
+        #self.merge(false_end - 1, true_chain)
+        #self.merge(false_end - 1, false_chain)
+        #self.backpatch(false_exit, false_begin)
+        return s_chain
 
     def parse_while_statement(self, node: WhileStatementNode):
         condition_begin, true_exit, false_exit = self.trans_condition(node.condition)
         while_begin = self.current_pos + 1
-        for statement in node.statements:
-            self.parse_node(statement)
-        self.emit(UnconditionalJumpQuaternion(condition_begin))
-        while_end = self.current_pos + 1
         self.backpatch(true_exit, while_begin)
-        self.backpatch(false_exit, while_end)
+        while_chain = 1
+        for statement in node.statements:
+            chain = self.parse_node(statement)
+            while_chain = chain if chain is not None else 1
+        while_end = self.current_pos
+        #self.backpatch(false_exit, while_end)
+        self.backpatch(while_chain, condition_begin)
+        self.emit(UnconditionalJumpQuaternion(condition_begin))
+        #self.merge(while_end - 1, while_chain)
+        chain = false_exit
+        return chain
 
     def parse_repeat_statement(self, node: RepeatStatementNode):
         repeat_begin = self.current_pos + 1
@@ -228,7 +246,7 @@ class Quaternizer:
 
     def backpatch(self, head: int, dest: int):
         head -= 1  # to index
-        while head != 0:
+        while head != 0 and head < len(self.quaternions):
             old_head = self.quaternions[head].dest
             self.quaternions[head].dest = dest
             head = old_head
@@ -240,7 +258,7 @@ class Quaternizer:
             return lhs + 1
         else:
             head = rhs
-            while head != 0:
+            while head != 0 and head < len(self.quaternions):
                 old_head = head
                 head = self.quaternions[head].dest
             # head == 0
